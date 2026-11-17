@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Papel {
+  ADMIN
+  PROFESSOR
+}
+
+model Usuario {
+  id    Int    @id @default(autoincrement())
+  nome  String
+  email String @unique
+  senha String
+  papel Papel  @default(PROFESSOR)
+}
+
+model Turma {
+  id      Int         @id @default(autoincrement())
+  nome    String
+  codigo  String      @unique
+  horario String
+  alunos  Matricula[]
+  aulas   Aula[]
+}
+
+model Aluno {
+  id        Int         @id @default(autoincrement())
+  nome      String
+  matricula String      @unique
+  turmas    Matricula[]
+  presencas Presenca[]
+}
+
+model Matricula {
+  aluno   Aluno @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  alunoId Int
+  turma   Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId Int
+
+  @@id([alunoId, turmaId])
+}
+
+model Aula {
+  id        Int        @id @default(autoincrement())
+  data      DateTime
+  horario   String
+  turma     Turma      @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId   Int
+  presencas Presenca[]
+}
+
+model Presenca {
+  id       Int     @id @default(autoincrement())
+  presente Boolean
+  aula     Aula    @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  aulaId   Int
+  aluno    Aluno   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  alunoId  Int
+
+  @@unique([aulaId, alunoId])
+}
