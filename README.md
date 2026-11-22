@@ -2,7 +2,7 @@
 
 > Desafio 4 (Projeto Final) do processo trainee da **EngNet**, desenvolvido pelo **Time Espadas**.
 
-Sistema web para registrar e acompanhar a frequência dos alunos em aulas práticas e laboratórios. Ele substitui as listas de presença em papel por uma chamada digital, com gestão de turmas, relatórios automáticos e alertas de baixa frequência.
+Sistema web para registrar e acompanhar a frequência dos alunos em aulas práticas e laboratórios. Ele substitui as listas de presença em papel por uma chamada digital, com gestão de turmas, relatórios automáticos e alertas de baixa frequência.Tivemos uns problemas quanto ao engajamento dos membros, devido a isto houve um atraso para a entrega dos trabalhos, somente o Caio Soares e o Roberto Filho fizeram este trabalho.
 
 ---
 
