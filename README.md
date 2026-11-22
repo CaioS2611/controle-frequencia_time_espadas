@@ -2,11 +2,26 @@
 
 > Desafio 4 (Projeto Final) do processo trainee da **EngNet**, desenvolvido pelo **Time Espadas**.
 
-Sistema web para registrar e acompanhar a frequência dos alunos em aulas práticas e laboratórios. Ele substitui as listas de presença em papel por uma chamada digital, com gestão de turmas, relatórios automáticos e alertas de baixa frequência.Tivemos uns problemas quanto ao engajamento dos membros, devido a isto houve um atraso para a entrega dos trabalhos, somente o Caio Soares e o Roberto Filho fizeram este trabalho.
+Sistema web para registrar e acompanhar a frequência dos alunos em aulas práticas e laboratórios. Ele substitui as listas de presença em papel por uma chamada digital, com gestão de turmas, relatórios automáticos e alertas de baixa frequência.
+
+Tivemos uns problemas quanto ao engajamento dos membros, devido a isto houve um atraso para a entrega dos trabalhos, somente o Caio Soares e o Roberto Filho fizeram este trabalho.
+
+## Acesse o projeto
+
+| | Link |
+|---|---|
+| **Site (frontend)** | https://controle-frequencia-time-espadas.vercel.app |
+| **API (backend)** | https://controle-frequencia-time-espadas.onrender.com |
+| **Exemplo de rota** | https://controle-frequencia-time-espadas.onrender.com/dashboard |
+
+> A API está no plano gratuito do Render, que "dorme" após 15 minutos sem uso. O primeiro acesso pode levar cerca de 1 minuto; depois disso, o sistema responde normalmente.
+
+**Hospedagem:** frontend na Vercel, backend no Render e banco PostgreSQL no Neon.
 
 ---
 
 ## Sumário
+- [Acesse o projeto](#acesse-o-projeto)
 - [O problema](#o-problema)
 - [Funcionalidades](#funcionalidades)
 - [Tecnologias](#tecnologias)
@@ -277,9 +292,7 @@ git push -u origin feature/minha-tarefa
 
 **Time Espadas**: processo trainee EngNet
 
-| Integrante | Matrícula | Responsabilidades |
-|---|---|---|
-| Caio Soares | 231025495 | Repositório Git, banco de dados (PostgreSQL + Prisma) e API (NestJS) |
-| Roberto Filho | | Frontend (telas de dashboard, turmas, frequência, relatórios e login) |
-| | | |
-| | | |
+| Integrante | Responsabilidades |
+|---|---|
+| Caio Soares | Repositório Git, banco de dados (PostgreSQL + Prisma) e API (NestJS) |
+| Roberto Filho | Frontend (telas de dashboard, turmas, frequência, relatórios e login) |
