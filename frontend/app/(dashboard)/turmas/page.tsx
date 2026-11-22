@@ -25,9 +25,17 @@ export default function TurmasPage() {
   const [nome, setNome] = useState('');
   const [codigo, setCodigo] = useState('');
   const [horario, setHorario] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
+  const carregarTurmas = () =>
+    apiService
+      .getTurmas()
+      .then(setTurmas)
+      .catch((e: Error) => setErro(e.message));
 
   useEffect(() => {
-    apiService.getTurmas().then(setTurmas);
+    carregarTurmas();
   }, []);
 
   const abrirModalCriar = () => {
@@ -46,31 +54,35 @@ export default function TurmasPage() {
     setModalAberto(true);
   };
 
-  const handleSalvar = (e: React.FormEvent) => {
+  const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (turmaEditando) {
-      setTurmas((prev) =>
-        prev.map((t) =>
-          t.id === turmaEditando.id ? { ...t, nome, codigo, horario } : t
-        )
-      );
-    } else {
-      const novaTurma: Turma = {
-        id: Date.now(),
-        nome,
-        codigo,
-        horario,
-        _count: { alunos: 0, aulas: 0 },
-        alunos: [],
-      };
-      setTurmas((prev) => [novaTurma, ...prev]);
+    setSalvando(true);
+    setErro(null);
+    try {
+      if (turmaEditando) {
+        await apiService.atualizarTurma(turmaEditando.id, { nome, codigo, horario });
+      } else {
+        await apiService.criarTurma({ nome, codigo, horario });
+      }
+      await carregarTurmas();
+      setModalAberto(false);
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setSalvando(false);
     }
-    setModalAberto(false);
   };
 
-  const handleRemover = (id: number) => {
-    if (confirm('Deseja realmente remover esta turma?')) {
+  const handleRemover = async (id: number) => {
+    if (!confirm('Deseja realmente remover esta turma? As aulas e chamadas dela também serão apagadas.')) {
+      return;
+    }
+    setErro(null);
+    try {
+      await apiService.removerTurma(id);
       setTurmas((prev) => prev.filter((t) => t.id !== id));
+    } catch (e) {
+      setErro((e as Error).message);
     }
   };
 
@@ -111,6 +123,12 @@ export default function TurmasPage() {
           className="w-full rounded-xl border border-zinc-300 bg-white py-2.5 pl-9 pr-4 text-sm outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-900"
         />
       </div>
+
+      {erro && (
+        <p className="rounded-xl border border-pink-300 bg-pink-50 px-4 py-3 text-sm font-medium text-pink-700 dark:border-pink-900 dark:bg-pink-950/30 dark:text-pink-300">
+          {erro}
+        </p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {turmasFiltradas.map((turma) => (
@@ -234,9 +252,10 @@ export default function TurmasPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 px-5 py-2 text-sm font-semibold text-white"
+                  disabled={salvando}
+                  className="rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  Salvar
+                  {salvando ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
             </form>

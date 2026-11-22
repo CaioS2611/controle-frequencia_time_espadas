@@ -93,9 +93,15 @@ export default function DashboardPage() {
                         </div>
                     </div>
                     <p className="mt-4 text-3xl font-bold">{dados.taxaMediaPresenca}%</p>
-                    <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                        Acima da meta mínima de 75%
-                    </p>
+                    {dados.taxaMediaPresenca >= 75 ? (
+                        <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                            Acima da meta mínima de 75%
+                        </p>
+                    ) : (
+                        <p className="mt-1 text-xs text-pink-600 dark:text-pink-400">
+                            Abaixo da meta mínima de 75%
+                        </p>
+                    )}
                 </div>
 
                 <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">

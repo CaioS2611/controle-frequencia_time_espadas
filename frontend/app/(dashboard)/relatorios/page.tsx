@@ -1,37 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Filter, AlertCircle, CheckCircle } from 'lucide-react';
-
-interface RelatorioAluno {
-  id: number;
-  nome: string;
-  matricula: string;
-  turma: string;
-  aulasTotais: number;
-  presencas: number;
-  faltas: number;
-}
-
-const dadosRelatorioMock: RelatorioAluno[] = [
-  { id: 1, nome: 'Ana Clara Silva', matricula: '242001122', turma: 'ENE0024 - Circuitos Digitais', aulasTotais: 12, presencas: 11, faltas: 1 },
-  { id: 2, nome: 'Bruno Henrique Costa', matricula: '242003344', turma: 'ENE0024 - Circuitos Digitais', aulasTotais: 12, presencas: 10, faltas: 2 },
-  { id: 3, nome: 'Carlos Eduardo Lima', matricula: '242005566', turma: 'ENE0024 - Circuitos Digitais', aulasTotais: 12, presencas: 7, faltas: 5 },
-  { id: 4, nome: 'Daniela Martins', matricula: '242007788', turma: 'ENE0152 - Sistemas Embarcados', aulasTotais: 8, presencas: 8, faltas: 0 },
-  { id: 5, nome: 'Eduardo Souza', matricula: '242009900', turma: 'ENE0108 - Práticas de Redes', aulasTotais: 10, presencas: 7, faltas: 3 },
-];
+import { apiService } from '@/services/api';
+import { RelatorioFrequencia } from '@/types';
 
 export default function RelatoriosPage() {
+  const [dados, setDados] = useState<RelatorioFrequencia[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [apenasFaltosos, setApenasFaltosos] = useState(false);
 
-  const listaFiltrada = dadosRelatorioMock.filter((item) => {
-    const percentual = (item.presencas / item.aulasTotais) * 100;
+  useEffect(() => {
+    apiService
+      .getRelatorioFrequencia()
+      .then(setDados)
+      .catch((e: Error) => setErro(e.message))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  const listaFiltrada = dados.filter((item) => {
+    const turma = `${item.turmaCodigo} - ${item.turmaNome}`.toLowerCase();
     const matchBusca =
       item.nome.toLowerCase().includes(busca.toLowerCase()) ||
       item.matricula.includes(busca) ||
-      item.turma.toLowerCase().includes(busca.toLowerCase());
-    const matchFaltoso = apenasFaltosos ? percentual < 75 : true;
+      turma.includes(busca.toLowerCase());
+    const matchFaltoso = apenasFaltosos ? item.abaixoDoLimite : true;
     return matchBusca && matchFaltoso;
   });
 
@@ -71,6 +66,12 @@ export default function RelatoriosPage() {
         </button>
       </div>
 
+      {erro && (
+        <p className="rounded-xl border border-pink-300 bg-pink-50 px-4 py-3 text-sm font-medium text-pink-700 dark:border-pink-900 dark:bg-pink-950/30 dark:text-pink-300">
+          {erro}
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -84,19 +85,31 @@ export default function RelatoriosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {carregando && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                    Carregando relatório...
+                  </td>
+                </tr>
+              )}
+              {!carregando && listaFiltrada.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                    Nenhum registro encontrado.
+                  </td>
+                </tr>
+              )}
               {listaFiltrada.map((aluno) => {
-                const percentual = Math.round(
-                  (aluno.presencas / aluno.aulasTotais) * 100
-                );
-                const critico = percentual < 75;
+                const semAulas = aluno.aulasTotais === 0;
+                const critico = aluno.abaixoDoLimite;
                 return (
-                  <tr key={aluno.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
+                  <tr key={`${aluno.alunoId}-${aluno.turmaId}`} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
                     <td className="px-6 py-4">
                       <p className="font-semibold">{aluno.nome}</p>
                       <p className="font-mono text-xs text-zinc-500">{aluno.matricula}</p>
                     </td>
                     <td className="px-6 py-4 text-zinc-600 dark:text-zinc-300">
-                      {aluno.turma}
+                      {aluno.turmaCodigo} - {aluno.turmaNome}
                     </td>
                     <td className="px-6 py-4 text-center font-medium">
                       {aluno.presencas} / {aluno.aulasTotais}
@@ -105,6 +118,9 @@ export default function RelatoriosPage() {
                       {aluno.faltas}
                     </td>
                     <td className="px-6 py-4 text-right">
+                      {semAulas ? (
+                        <span className="text-xs text-zinc-400">Sem aulas</span>
+                      ) : (
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
                           critico
@@ -117,8 +133,9 @@ export default function RelatoriosPage() {
                         ) : (
                           <CheckCircle className="h-3.5 w-3.5" />
                         )}
-                        {percentual}%
+                        {aluno.percentual}%
                       </span>
+                      )}
                     </td>
                   </tr>
                 );
