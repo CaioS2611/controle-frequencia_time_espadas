@@ -46,6 +46,7 @@ export interface Aula {
 
 export interface DashboardResumo {
     totalAlunos: number;
+    totalTurmas?: number;
     totalAulas: number;
     taxaMediaPresenca: number;
     alertasBaixaFrequencia: {
@@ -60,4 +61,19 @@ export interface DashboardResumo {
         nome: string;
         percentual: number;
     }[];
+}
+
+// Uma linha por aluno em cada turma (GET /relatorios/frequencia)
+export interface RelatorioFrequencia {
+    alunoId: number;
+    nome: string;
+    matricula: string;
+    turmaId: number;
+    turmaCodigo: string;
+    turmaNome: string;
+    aulasTotais: number;
+    presencas: number;
+    faltas: number;
+    percentual: number;
+    abaixoDoLimite: boolean;
 }

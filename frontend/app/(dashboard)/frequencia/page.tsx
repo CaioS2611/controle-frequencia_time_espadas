@@ -24,17 +24,20 @@ export default function FrequenciaPage() {
   const [buscaAluno, setBuscaAluno] = useState<string>('');
   const [presencas, setPresencas] = useState<Record<number, boolean>>({});
   const [salvoSucesso, setSalvoSucesso] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([apiService.getTurmas(), apiService.getAulas()]).then(
-      ([listaTurmas, listaAulas]) => {
+    Promise.all([apiService.getTurmas(), apiService.getAulas()])
+      .then(([listaTurmas, listaAulas]) => {
         setTurmas(listaTurmas);
         setAulasHistorico(listaAulas);
         if (listaTurmas.length > 0) {
+          setTurmaSelecionadaId(listaTurmas[0].id);
           inicializarPresencas(listaTurmas[0]);
         }
-      }
-    );
+      })
+      .catch((e: Error) => setErro(e.message));
   }, []);
 
   const inicializarPresencas = (turma: Turma) => {
@@ -68,27 +71,30 @@ export default function FrequenciaPage() {
         aluno.matricula.includes(buscaAluno)
     ) || [];
 
-  const handleSalvarChamada = (e: React.FormEvent) => {
+  const handleSalvarChamada = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!turmaAtual) return;
 
-    const novaAula: Aula = {
-      id: Date.now(),
-      data: new Date(dataAula).toISOString(),
-      horario: horarioAula,
-      turmaId: turmaAtual.id,
-      turma: turmaAtual,
-      presencas: Object.entries(presencas).map(([alunoId, presente], idx) => ({
-        id: idx + 1,
-        alunoId: Number(alunoId),
-        aulaId: Date.now(),
-        presente,
-      })),
-    };
-
-    setAulasHistorico((prev) => [novaAula, ...prev]);
-    setSalvoSucesso(true);
-    setTimeout(() => setSalvoSucesso(false), 4000);
+    setSalvando(true);
+    setErro(null);
+    try {
+      const novaAula = await apiService.registrarChamada({
+        turmaId: turmaAtual.id,
+        data: dataAula,
+        horario: horarioAula,
+        presencas: Object.entries(presencas).map(([alunoId, presente]) => ({
+          alunoId: Number(alunoId),
+          presente,
+        })),
+      });
+      setAulasHistorico((prev) => [novaAula, ...prev]);
+      setSalvoSucesso(true);
+      setTimeout(() => setSalvoSucesso(false), 4000);
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const totalPresentes = Object.values(presencas).filter(Boolean).length;
@@ -221,7 +227,9 @@ export default function FrequenciaPage() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          {salvoSucesso ? (
+          {erro ? (
+            <p className="text-sm font-semibold text-pink-600 dark:text-pink-400">{erro}</p>
+          ) : salvoSucesso ? (
             <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
               Frequência registrada com sucesso no sistema!
             </p>
@@ -230,10 +238,11 @@ export default function FrequenciaPage() {
           )}
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-95 sm:w-auto"
+            disabled={salvando || !turmaAtual}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-60 sm:w-auto"
           >
             <Save className="h-4 w-4" />
-            Salvar Frequência da Aula
+            {salvando ? 'Salvando...' : 'Salvar Frequência da Aula'}
           </button>
         </div>
       </form>
@@ -262,7 +271,7 @@ export default function FrequenciaPage() {
                 return (
                   <tr key={aula.id}>
                     <td className="py-3.5 pr-4 font-medium">
-                      {new Date(aula.data).toLocaleDateString('pt-BR')}
+                      {new Date(aula.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                     </td>
                     <td className="py-3.5 pr-4">{aula.horario}</td>
                     <td className="py-3.5 pr-4">

@@ -1,7 +1,9 @@
-import { Aula, DashboardResumo, Turma } from '@/types';
+import { Aula, DashboardResumo, RelatorioFrequencia, Turma } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const USE_MOCK = true;
+// Dados reais vêm do backend. Para usar os dados falsos (sem backend rodando),
+// crie frontend/.env.local com NEXT_PUBLIC_USE_MOCK=true.
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -16,9 +18,13 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
     });
 
     if (!res.ok) {
-        throw new Error(`Erro na API: ${res.status}`);
+        // O backend devolve { message: '...' } explicando o erro.
+        const corpo = await res.json().catch(() => null);
+        const mensagem = Array.isArray(corpo?.message) ? corpo.message.join(', ') : corpo?.message;
+        throw new Error(mensagem || `Erro na API: ${res.status}`);
     }
 
+    if (res.status === 204) return undefined as T;
     return res.json();
 }
 
@@ -103,6 +109,19 @@ export const mockAulas: Aula[] = [
     },
 ];
 
+export interface NovaTurma {
+    nome: string;
+    codigo: string;
+    horario: string;
+}
+
+export interface NovaChamada {
+    turmaId: number;
+    data: string; // formato AAAA-MM-DD
+    horario: string;
+    presencas: { alunoId: number; presente: boolean }[];
+}
+
 export const apiService = {
     getDashboard: async (): Promise<DashboardResumo> => {
         if (USE_MOCK) return Promise.resolve(mockDashboard);
@@ -112,8 +131,20 @@ export const apiService = {
         if (USE_MOCK) return Promise.resolve(mockTurmas);
         return fetchApi<Turma[]>('/turmas');
     },
-    getAulas: async (): Promise<Aula[]> => {
+    criarTurma: (dados: NovaTurma): Promise<Turma> =>
+        fetchApi<Turma>('/turmas', { method: 'POST', body: JSON.stringify(dados) }),
+    atualizarTurma: (id: number, dados: Partial<NovaTurma>): Promise<Turma> =>
+        fetchApi<Turma>(`/turmas/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
+    removerTurma: (id: number): Promise<void> =>
+        fetchApi<void>(`/turmas/${id}`, { method: 'DELETE' }),
+    getAulas: async (turmaId?: number): Promise<Aula[]> => {
         if (USE_MOCK) return Promise.resolve(mockAulas);
-        return fetchApi<Aula[]>('/aulas');
+        return fetchApi<Aula[]>(turmaId ? `/aulas?turmaId=${turmaId}` : '/aulas');
     },
+    registrarChamada: (dados: NovaChamada): Promise<Aula> =>
+        fetchApi<Aula>('/aulas', { method: 'POST', body: JSON.stringify(dados) }),
+    getRelatorioFrequencia: (turmaId?: number): Promise<RelatorioFrequencia[]> =>
+        fetchApi<RelatorioFrequencia[]>(
+            turmaId ? `/relatorios/frequencia?turmaId=${turmaId}` : '/relatorios/frequencia'
+        ),
 };
