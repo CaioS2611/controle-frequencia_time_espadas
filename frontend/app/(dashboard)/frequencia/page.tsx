@@ -13,13 +13,21 @@ import {
   Search,
 } from 'lucide-react';
 
+// Data de hoje no fuso do usuário, no formato AAAA-MM-DD usado pelo <input type="date">.
+function hojeNoFormatoInput() {
+  const hoje = new Date();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  return `${hoje.getFullYear()}-${mes}-${dia}`;
+}
+
 export default function FrequenciaPage() {
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [aulasHistorico, setAulasHistorico] = useState<Aula[]>([]);
   const [turmaSelecionadaId, setTurmaSelecionadaId] = useState<number>(1);
-  const [dataAula, setDataAula] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  // A data de hoje é preenchida no useEffect: o Next.js não permite ler a hora atual
+  // durante a pré-renderização da página.
+  const [dataAula, setDataAula] = useState<string>('');
   const [horarioAula, setHorarioAula] = useState<string>('14:00');
   const [buscaAluno, setBuscaAluno] = useState<string>('');
   const [presencas, setPresencas] = useState<Record<number, boolean>>({});
@@ -28,6 +36,7 @@ export default function FrequenciaPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
+    setDataAula(hojeNoFormatoInput());
     Promise.all([apiService.getTurmas(), apiService.getAulas()])
       .then(([listaTurmas, listaAulas]) => {
         setTurmas(listaTurmas);
